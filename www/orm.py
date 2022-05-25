@@ -212,6 +212,8 @@ class Model(dict, metaclass=ModelMetaclass):
     def __init__(self, **kw):
         super(Model, self).__init__(**kw)
     
+    # __getattribute__ 获取属性时，一定会被调用，不论属性存不存在
+    # __getattr__ 获取不存在的属性时会调用该方法
     def __getattr__(self, key):
         try:
             return self[key]
@@ -225,6 +227,7 @@ class Model(dict, metaclass=ModelMetaclass):
         return getattr(self, key, None)
 
     def getValueOrDefault(self, key):
+        # getattr(),python内置函数，获取对象的属性和方法
         value = getattr(self, key, None)
         if value is None:
             field = self.__mappings__[key]
