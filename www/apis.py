@@ -1,12 +1,12 @@
 import json, logging, inspect, functools
-from math import floor
+from math import ceil
 
 ## 建立Page类来处理分页,可以在page_size更改每页项目的个数
 class Page(object):
     def __init__(self, item_count, page_index=1, page_size=8) -> None:
         self.item_count = item_count
         self.page_size = page_size
-        self.page_count = floor(item_count / page_size)
+        self.page_count = int(ceil(item_count / page_size))
         if item_count == 0 or page_index > self.page_count:
             self.offset = 0
             self.limit = 0
@@ -14,7 +14,7 @@ class Page(object):
         else:
             self.page_index = page_index
             self.limit = self.page_size
-            self.offset = self.page_size * (self.page_index - 1)
+            self.offset = self.page_size * (page_index - 1)
         self.has_next = self.page_index < self.page_count
         self.has_previous = self.page_index > 1
 

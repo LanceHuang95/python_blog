@@ -1,10 +1,6 @@
 import asyncio, os, inspect, logging, functools
-import imp
-from textwrap import wrap
-from tkinter.messagebox import NO
 from urllib import parse
 from aiohttp import web
-from pymysql import paramstyle
 ## apis是处理分页的模块,代码在本章页面末尾,请将apis.py放在www下以防报错
 ## APIError 是指API调用时发生逻辑错误
 from apis import APIError

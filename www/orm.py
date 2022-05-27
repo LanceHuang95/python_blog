@@ -244,7 +244,7 @@ class Model(dict, metaclass=ModelMetaclass):
         if where:
             sql.append('where')
             sql.append(where)
-        if args:
+        if args is None:
             args = []
         orderBy = kw.get('orderBy', None)
         if orderBy:

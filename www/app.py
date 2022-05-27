@@ -11,7 +11,7 @@ import orm
 from coroweb import add_routes, add_static
 
 ## handlers 是url处理模块, 当handlers.py在API章节里完全编辑完再将下一行代码的双井号去掉
-## from handlers import cookie2user, COOKIE_NAME
+from handlers import cookie2user, COOKIE_NAME
 
 ## 初始化jinja2的函数
 def init_jinja2(app, **kw):
@@ -49,22 +49,23 @@ async def logger_factory(app, handler):
         return (await handler(request))
     return logger
 
-## 认证处理工厂--把当前用户绑定到request上，并对URL/manage/进行拦截，检查当前用户是否是管理员身份
-## 需要handlers.py的支持
-##async def auth_factory(app, handler):
-##    async def auth(request):
-##        logging.info('check user: %s %s' % (request.method, request.path))
-##        request.__user__ = None
-##        cookie_str = request.cookies.get(COOKIE_NAME)
-##        if cookie_str:
-##            user = await cookie2user(cookie_str)
-##            if user:
-##                logging.info('set current user: %s' % user.email)
-##                request.__user__ = user
-##        if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
-##            return web.HTTPFound('/signin')
-##        return (await handler(request))
-##    return auth
+# 利用middle在处理URL之前，把cookie解析出来，并将登录用户绑定到request对象上，这样，后续的URL处理函数就可以直接拿到登录用户：
+# 认证处理工厂--把当前用户绑定到request上，并对URL/manage/进行拦截，检查当前用户是否是管理员身份
+# 需要handlers.py的支持
+async def auth_factory(app, handler):
+   async def auth(request):
+       logging.info('check user: %s %s' % (request.method, request.path))
+       request.__user__ = None
+       cookie_str = request.cookies.get(COOKIE_NAME)
+       if cookie_str:
+           user = await cookie2user(cookie_str)
+           if user:
+               logging.info('set current user: %s' % user.email)
+               request.__user__ = user
+       if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
+           return web.HTTPFound('/signin')
+       return (await handler(request))
+   return auth
 
 ## 数据处理工厂
 async def data_factory(app, handler):
@@ -107,7 +108,7 @@ async def response_factory(app, handler):
                 return resp
             else:
                 ## 在handlers.py完全完成后,去掉下一行的双井号
-                ##r['__user__'] = request.__user__
+                r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp
@@ -144,8 +145,9 @@ async def init(loop):
     ## 在handlers.py完全完成后,在下面middlewares的list中加入auth_factory
     # URL在被某个函数处理钱，会经过middlewares拦截器处理
     app = web.Application(middlewares=[
-        logger_factory, response_factory
+        logger_factory, response_factory, auth_factory
     ])
+    # datetime filter（过滤器），把一个浮点数转换成日期字符串，在blogs中使用
     init_jinja2(app, filters=dict(datetime=datetime_filter))
     add_routes(app, 'handlers')
     add_static(app)
